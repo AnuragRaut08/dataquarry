@@ -367,4 +367,4 @@ No magic scores.
 
 No black-box heuristics.
 
-Only evidence.
+Only Evidence.
