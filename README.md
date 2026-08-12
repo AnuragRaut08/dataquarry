@@ -49,7 +49,7 @@ Rather than becoming "just another converter", DataQuarry aims to become a pract
 
 # Features
 
-## Current
+## Current 
 
 - CLI foundation
 - Project architecture
