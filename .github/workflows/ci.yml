@@ -8,8 +8,12 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -20,12 +24,19 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Download Dependencies
         run: go mod download
 
+      - name: Verify Dependencies
+        run: go mod verify
+
       - name: Build
         run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
 
       - name: Test
         run: go test ./...
