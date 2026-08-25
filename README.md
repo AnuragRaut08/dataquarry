@@ -4,7 +4,7 @@
 
 DataQuarry is an open-source CLI for **data engineers** that inspects datasets, diagnoses storage inefficiencies, and recommends better data formats using measurable evidence—not guesswork.
 
-Instead of asking:
+Instead of asking: 
 
 > "Should I use Parquet or Avro?"
 
