@@ -16,7 +16,7 @@ DataQuarry helps answer:
 
 ## Why DataQuarry?
 
-Every day, data engineers make decisions like:
+Every day, data engineers make decisions like: 
 
 - Should this dataset stay as JSON?
 - Is Parquet actually the right choice?
