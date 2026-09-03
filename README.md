@@ -43,7 +43,7 @@ Rather than becoming "just another converter", DataQuarry aims to become a pract
 - what your data looks like
 - why performance suffers
 - how storage can be improved
-- which format best matches your workload
+- which format best matches your workload 
 
 ---
 
