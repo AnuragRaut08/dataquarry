@@ -13,13 +13,13 @@ import (
 // inspectCmd represents the inspect command
 var inspectCmd = &cobra.Command{
 	Use:   "inspect",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Inspect a data file",
+	Long: `Inspect a data file and display useful information about its
+schema, storage layout, and other data characteristics.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+DataQuarry will provide actionable insights to help understand
+how the data is structured and stored.`,
+
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("inspect called")
 	},
