@@ -6,9 +6,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const version = "0.1.0"
+
 var rootCmd = &cobra.Command{
-	Use:   "dataquarry",
-	Short: "Inspect, diagnose, and optimize data files",
+	Use:     "dataquarry",
+	Short:   "Inspect, diagnose, and optimize data files",
+	Version: version,
 	Long: `DataQuarry is a CLI for data engineers that helps inspect,
 diagnose, benchmark, and optimize data files using evidence
 instead of guesswork.
