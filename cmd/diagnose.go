@@ -1,6 +1,7 @@
-/* 
+/*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-*/ 
+*/
+
 package cmd
 
 import (
@@ -12,13 +13,12 @@ import (
 // diagnoseCmd represents the diagnose command
 var diagnoseCmd = &cobra.Command{
 	Use:   "diagnose",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Analyze a dataset for storage issues",
+	Long: `Analyze a dataset and report structured storage findings.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+DataQuarry's diagnostic engine identifies inefficient storage
+patterns and provides evidence-backed recommendations without
+modifying the underlying dataset.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("diagnose called")
 	},
@@ -26,14 +26,4 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(diagnoseCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// diagnoseCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// diagnoseCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
