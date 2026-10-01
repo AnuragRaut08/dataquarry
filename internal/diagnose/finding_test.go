@@ -39,3 +39,21 @@ func TestSeverityValues(t *testing.T) {
 		t.Fatal("unexpected severity count")
 	}
 }
+
+func TestSeverityString(t *testing.T) {
+	tests := []struct {
+		severity Severity
+		want     string
+	}{
+		{SeverityLow, "low"},
+		{SeverityMedium, "medium"},
+		{SeverityHigh, "high"},
+		{SeverityCritical, "critical"},
+	}
+
+	for _, tt := range tests {
+		if got := tt.severity.String(); got != tt.want {
+			t.Errorf("%q.String() = %q, want %q", tt.severity, got, tt.want)
+		}
+	}
+}
