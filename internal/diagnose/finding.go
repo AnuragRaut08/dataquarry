@@ -1,5 +1,7 @@
 package diagnose
 
+import "fmt"
+
 // Severity represents the importance of a diagnostic finding.
 type Severity string
 
@@ -17,6 +19,16 @@ const (
 // String returns the textual representation of the severity.
 func (s Severity) String() string {
 	return string(s)
+}
+
+// Validate checks whether the severity is one of the supported values.
+func (s Severity) Validate() error {
+	switch s {
+	case SeverityLow, SeverityMedium, SeverityHigh, SeverityCritical:
+		return nil
+	default:
+		return fmt.Errorf("invalid severity: %q", s)
+	}
 }
 
 // Finding is a structured, machine-readable diagnostic result.

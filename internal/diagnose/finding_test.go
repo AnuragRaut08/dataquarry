@@ -57,3 +57,23 @@ func TestSeverityString(t *testing.T) {
 		}
 	}
 }
+
+func TestSeverityValidate(t *testing.T) {
+	tests := []struct {
+		severity Severity
+		wantErr  bool
+	}{
+		{SeverityLow, false},
+		{SeverityMedium, false},
+		{SeverityHigh, false},
+		{SeverityCritical, false},
+		{Severity("unknown"), true},
+	}
+
+	for _, tt := range tests {
+		err := tt.severity.Validate()
+		if (err != nil) != tt.wantErr {
+			t.Errorf("%q.Validate() error = %v, wantErr %v", tt.severity, err, tt.wantErr)
+		}
+	}
+}
