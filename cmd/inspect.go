@@ -25,7 +25,7 @@ how the data is structured and stored.`,
 	},
 }
 
-func init() {
+func init() { 
 	rootCmd.AddCommand(inspectCmd)
 
 	// Here you will define your flags and configuration settings.
