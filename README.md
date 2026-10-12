@@ -10,7 +10,7 @@ The project is in early development. The current codebase includes a Go CLI foun
 
 DataQuarry aims to help data engineers answer questions such as:
 
-- What does this data file contain?
+- What does this data file contain? 
 - What schema and storage layout does it use?
 - Are there potential storage inefficiencies?
 - Which storage format or configuration might suit a workload?
