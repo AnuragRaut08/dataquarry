@@ -6,13 +6,13 @@ import "fmt"
 type Severity string
 
 const (
-	// SeverityLow indicates a low-impact finding.
+	// SeverityLow indicates the low-impact finding.
 	SeverityLow Severity = "low"
-	// SeverityMedium indicates a moderate finding.
+	// SeverityMedium indicates the moderate finding.
 	SeverityMedium Severity = "medium"
-	// SeverityHigh indicates a significant finding.
+	// SeverityHigh indicates the significant finding.
 	SeverityHigh Severity = "high"
-	// SeverityCritical indicates a critical finding.
+	// SeverityCritical indicates the critical finding.
 	SeverityCritical Severity = "critical"
 )
 
