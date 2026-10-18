@@ -4,7 +4,7 @@
 
 DataQuarry is an open-source CLI project for data engineers, focused on understanding data files and identifying storage inefficiencies using evidence instead of guesswork.
 
-The project is in early development. The current codebase includes a Go CLI foundation, structured diagnostic models, and a reusable Parquet metadata reader. The end-to-end `inspect` and `diagnose` workflows are still under development.
+The project is in early development. It includes a Go CLI, a functional Parquet `inspect` command, reusable metadata and diagnostic models, and automated tests. Diagnostic rules and additional inspection capabilities remain under development.
 
 ## Project Goals
 
@@ -30,12 +30,11 @@ Implemented foundations:
 
 In progress:
 
-- Connecting Parquet metadata to the `inspect` command
 - Adding reusable Parquet test fixtures
 - Implementing diagnostic rules
 - Improving CLI error handling
 
-The `inspect` and `diagnose` commands are not yet complete end-to-end workflows. Their current output is placeholder text.
+The `inspect` command reads Parquet footer metadata and reports row counts, column counts, row groups, compressed and uncompressed column-chunk sizes, compression ratio, codecs, and schema. The `diagnose` workflow remains under development.
 
 ## Requirements
 
@@ -85,13 +84,13 @@ go run . --version
 
 ### Inspect
 
-The `inspect` command is intended to report structural information about a data file, beginning with Parquet metadata.
+The `inspect` command reports structural metadata from a Parquet file.
 
 ```bash
-go run . inspect
+go run . inspect sales.parquet
 ```
 
-At the current development stage, the command prints placeholder output. Passing a file path and displaying real metadata are part of the ongoing implementation.
+Replace `sales.parquet` with the path to your Parquet file. The command reports metadata read from the file footer and does not modify the input file.
 
 ### Diagnose
 
@@ -125,7 +124,6 @@ Please keep changes focused and add tests for new behavior.
 
 Planned development includes:
 
-- **Inspection:** display Parquet schema, row counts, row groups, and compression metadata
 - **Diagnostics:** identify evidence-backed storage issues
 - **Error handling:** provide clear errors for missing, invalid, or corrupted input files
 - **Documentation:** provide accurate usage examples as workflows become available

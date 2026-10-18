@@ -96,6 +96,27 @@ func TestReadMetadataValidParquet(t *testing.T) {
 		t.Fatalf("expected 2 rows, got %d", metadata.NumRows)
 	}
 
+	if metadata.NumColumns != 2 {
+		t.Fatalf("expected 2 columns, got %d", metadata.NumColumns)
+	}
+
+	if metadata.CompressedSize <= 0 {
+		t.Fatalf("expected positive compressed size, got %d", metadata.CompressedSize)
+	}
+
+	if metadata.UncompressedSize <= 0 {
+		t.Fatalf("expected positive uncompressed size, got %d", metadata.UncompressedSize)
+	}
+
+	if metadata.CompressionRatio <= 0 {
+		t.Fatalf("expected positive compression ratio, got %f", metadata.CompressionRatio)
+	}
+
+	expectedRatio := float64(metadata.UncompressedSize) / float64(metadata.CompressedSize)
+	if metadata.CompressionRatio != expectedRatio {
+		t.Fatalf("expected compression ratio %f, got %f", expectedRatio, metadata.CompressionRatio)
+	}
+
 	if metadata.NumRowGroups < 1 {
 		t.Fatalf("expected at least 1 row group, got %d", metadata.NumRowGroups)
 	}
