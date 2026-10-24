@@ -25,7 +25,7 @@ Implemented foundations:
 - CLI version reporting
 - Reusable Parquet footer metadata reader
 - Metadata extraction for row counts, row groups, schema names, and compression codecs
-- Structured diagnostic findings with severity validation
+- Structured diagnostic findings with severity validation.
 - Automated tests and CI
 
 In progress:
