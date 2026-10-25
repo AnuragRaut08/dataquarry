@@ -1,3 +1,4 @@
+
 package summary
 
 // ColumnSummary contains derived measurements for a dataset column.
@@ -7,6 +8,7 @@ type ColumnSummary struct {
 	CompressedSize   int64
 	UncompressedSize int64
 	NullCount        int64
+	NullCountKnown   bool
 	CompressionCodec string
 }
 
@@ -30,10 +32,8 @@ func NewSummary(
 	numRowGroups int,
 	columns []ColumnSummary,
 ) Summary {
-	var compressed int64
-	var uncompressed int64
-
-	codecSet := map[string]struct{}{}
+	var compressed, uncompressed int64
+	codecSet := make(map[string]struct{})
 	codecs := make([]string, 0)
 
 	for _, c := range columns {
