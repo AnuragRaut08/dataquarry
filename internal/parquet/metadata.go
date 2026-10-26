@@ -20,6 +20,7 @@ type Metadata struct {
 	CompressionRatio  float64
 	Schema            []string
 	CompressionCodecs []string
+	Columns           []summary.ColumnSummary
 }
 
 // ReadMetadata reads structural metadata from a Parquet file footer.
@@ -48,6 +49,8 @@ func ReadMetadata(path string) (*Metadata, error) {
 	schema := make([]string, 0, len(schemaColumns))
 	columnSummaries := make([]summary.ColumnSummary, 0, len(schemaColumns))
 	columnIndexes := make(map[string]int, len(schemaColumns))
+	rowGroupsWithColumn := make([]int, len(schemaColumns))
+	rowGroupsWithNullStats := make([]int, len(schemaColumns))
 
 	for _, pathParts := range schemaColumns {
 		name := strings.Join(pathParts, ".")
@@ -77,8 +80,21 @@ func ReadMetadata(path string) (*Metadata, error) {
 				columnSummaries[index].UncompressedSize += columnMetadata.TotalUncompressedSize
 				columnSummaries[index].Type = columnMetadata.Type.String()
 				columnSummaries[index].CompressionCodec = codec
+
+				rowGroupsWithColumn[index]++
+
+				if columnMetadata.Statistics.NullCount > 0 {
+					columnSummaries[index].NullCount += columnMetadata.Statistics.NullCount
+					rowGroupsWithNullStats[index]++
+				}
 			}
 		}
+	}
+
+	for i := range columnSummaries {
+		columnSummaries[i].NullCountKnown =
+			rowGroupsWithColumn[i] > 0 &&
+				rowGroupsWithColumn[i] == rowGroupsWithNullStats[i]
 	}
 
 	codecs := make([]string, 0, len(codecSet))
@@ -111,5 +127,6 @@ func ReadMetadata(path string) (*Metadata, error) {
 		CompressionRatio:  ratio,
 		Schema:            schema,
 		CompressionCodecs: codecs,
+		Columns:           columnSummaries,
 	}, nil
 }

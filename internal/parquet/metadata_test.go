@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/AnuragRaut08/dataquarry/internal/summary"
 	parquetgo "github.com/parquet-go/parquet-go"
 )
 
@@ -127,5 +128,112 @@ func TestReadMetadataValidParquet(t *testing.T) {
 
 	if len(metadata.CompressionCodecs) == 0 {
 		t.Fatal("expected at least one compression codec")
+	}
+}
+
+type nullableTestRecord struct {
+	ID    int64   `parquet:"id"`
+	Email *string `parquet:"email"`
+}
+
+func TestReadMetadataNullCountStatistics(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "null-counts.parquet")
+
+	email := "alice@example.com"
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writer := parquetgo.NewGenericWriter[nullableTestRecord](file)
+	_, err = writer.Write([]nullableTestRecord{
+		{ID: 1, Email: &email},
+		{ID: 2, Email: nil},
+		{ID: 3, Email: nil},
+	})
+	if err != nil {
+		_ = writer.Close()
+		_ = file.Close()
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		_ = file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	metadata, err := ReadMetadata(path)
+	if err != nil {
+		t.Fatalf("ReadMetadata failed: %v", err)
+	}
+
+	columns := make(map[string]summary.ColumnSummary)
+	for _, column := range metadata.Columns {
+		columns[column.Name] = column
+	}
+
+	emailColumn, ok := columns["email"]
+	if !ok {
+		t.Fatal("email column not found")
+	}
+	if emailColumn.NullCount != 2 {
+		t.Errorf("email null count = %d, want 2", emailColumn.NullCount)
+	}
+	if !emailColumn.NullCountKnown {
+		t.Error("email null count should be known when positive statistics are present")
+	}
+
+	idColumn, ok := columns["id"]
+	if !ok {
+		t.Fatal("id column not found")
+	}
+	if idColumn.NullCountKnown {
+		t.Error("id zero null count should remain unknown with the current conservative implementation")
+	}
+}
+
+func TestReadMetadataZeroNullCount(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "zero-nulls.parquet")
+
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writer := parquetgo.NewGenericWriter[testRecord](file)
+	_, err = writer.Write([]testRecord{
+		{ID: 1, Name: "alice"},
+		{ID: 2, Name: "bob"},
+	})
+	if err != nil {
+		_ = writer.Close()
+		_ = file.Close()
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		_ = file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	metadata, err := ReadMetadata(path)
+	if err != nil {
+		t.Fatalf("ReadMetadata failed: %v", err)
+	}
+
+	if len(metadata.Columns) == 0 {
+		t.Fatal("expected columns in metadata")
+	}
+	for _, column := range metadata.Columns {
+		if column.NullCount != 0 {
+			t.Errorf("column %q: expected zero nulls, got %d", column.Name, column.NullCount)
+		}
+		if column.NullCountKnown {
+			t.Errorf("column %q: expected zero null count to remain unknown", column.Name)
+		}
 	}
 }
