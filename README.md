@@ -1,10 +1,18 @@
 # DataQuarry
 
-> Understand your data before you move it.
+- Understand your data before you move it.
 
 DataQuarry is an open-source CLI project for data engineers, focused on understanding data files and identifying storage inefficiencies using evidence instead of guesswork.
 
 The project is in early development. It includes a Go CLI, a functional Parquet `inspect` command, reusable metadata and diagnostic models, and automated tests. Diagnostic rules and additional inspection capabilities remain under development.
+
+## Release Plan
+
+DataQuarry is targeting **v1.0.0 on 7 November 2026**.
+
+Contributors can help us reach this milestone by focusing on reliability, accurate diagnostics, testing, and documentation.
+
+See the [v1.0.0 release roadmap](ROADMAP.md) for the release scope, schedule, and contribution priorities.
 
 ## Project Goals
 
