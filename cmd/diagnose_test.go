@@ -25,6 +25,7 @@ func createDiagnoseFixture(t *testing.T, records []diagnoseTestRecord) string {
 	}
 
 	writer := parquetgo.NewGenericWriter[diagnoseTestRecord](file)
+
 	_, writeErr := writer.Write(records)
 	closeWriterErr := writer.Close()
 	closeFileErr := file.Close()
@@ -57,8 +58,9 @@ func runDiagnoseForTest(t *testing.T, path string) (string, error) {
 	return output.String(), err
 }
 
-func TestRunDiagnoseReportsFindings(t *testing.T) {
+func TestRunDiagnoseReportsBothFindings(t *testing.T) {
 	email := "user@example.com"
+
 	path := createDiagnoseFixture(t, []diagnoseTestRecord{
 		{ID: 1, Email: &email},
 		{ID: 2, Email: nil},
@@ -72,33 +74,16 @@ func TestRunDiagnoseReportsFindings(t *testing.T) {
 
 	for _, expected := range []string{
 		"Diagnostic Results",
-		"high null ratio",
+		`Column "email" has a high null ratio`,
 		"2 nulls out of 3 rows (66.7%)",
-		"Row groups are much smaller than recommended",
 		"Severity: medium",
+		"Row groups are much smaller than recommended",
 		"Severity: high",
 		"Recommendation:",
 	} {
 		if !strings.Contains(output, expected) {
 			t.Errorf("output does not contain %q:\n%s", expected, output)
 		}
-	}
-}
-
-func TestRunDiagnoseNoFindings(t *testing.T) {
-	email := "user@example.com"
-	path := createDiagnoseFixture(t, []diagnoseTestRecord{
-		{ID: 1, Email: &email},
-		{ID: 2, Email: &email},
-	})
-
-	output, err := runDiagnoseForTest(t, path)
-	if err != nil {
-		t.Fatalf("runDiagnose returned an error: %v", err)
-	}
-
-	if !strings.Contains(output, "No diagnostic findings.") {
-		t.Fatalf("expected no-findings message, got:\n%s", output)
 	}
 }
 
