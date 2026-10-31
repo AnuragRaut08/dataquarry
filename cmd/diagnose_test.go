@@ -15,7 +15,7 @@ type diagnoseTestRecord struct {
 	Email *string `parquet:"email,optional"`
 }
 
-func createDiagnoseFixture(t *testing.T) string {
+func createDiagnoseFixture(t *testing.T, records []diagnoseTestRecord) string {
 	t.Helper()
 
 	path := filepath.Join(t.TempDir(), "diagnose.parquet")
@@ -25,13 +25,6 @@ func createDiagnoseFixture(t *testing.T) string {
 	}
 
 	writer := parquetgo.NewGenericWriter[diagnoseTestRecord](file)
-
-	email := "user@example.com"
-	records := []diagnoseTestRecord{
-		{ID: 1, Email: &email},
-		{ID: 2, Email: nil},
-		{ID: 3, Email: nil},
-	}
 
 	_, writeErr := writer.Write(records)
 	closeWriterErr := writer.Close()
@@ -50,8 +43,8 @@ func createDiagnoseFixture(t *testing.T) string {
 	return path
 }
 
-func TestRunDiagnoseReportsBothFindings(t *testing.T) {
-	path := createDiagnoseFixture(t)
+func runDiagnoseForTest(t *testing.T, path string) (string, error) {
+	t.Helper()
 
 	var output bytes.Buffer
 	command := diagnoseCmd
@@ -61,11 +54,23 @@ func TestRunDiagnoseReportsBothFindings(t *testing.T) {
 		command.SetOut(nil)
 	})
 
-	if err := runDiagnose(command, []string{path}); err != nil {
+	err := runDiagnose(command, []string{path})
+	return output.String(), err
+}
+
+func TestRunDiagnoseReportsBothFindings(t *testing.T) {
+	email := "user@example.com"
+
+	path := createDiagnoseFixture(t, []diagnoseTestRecord{
+		{ID: 1, Email: &email},
+		{ID: 2, Email: nil},
+		{ID: 3, Email: nil},
+	})
+
+	output, err := runDiagnoseForTest(t, path)
+	if err != nil {
 		t.Fatalf("runDiagnose returned an error: %v", err)
 	}
-
-	got := output.String()
 
 	for _, expected := range []string{
 		"Diagnostic Results",
@@ -76,8 +81,8 @@ func TestRunDiagnoseReportsBothFindings(t *testing.T) {
 		"Severity: high",
 		"Recommendation:",
 	} {
-		if !strings.Contains(got, expected) {
-			t.Errorf("output does not contain %q:\n%s", expected, got)
+		if !strings.Contains(output, expected) {
+			t.Errorf("output does not contain %q:\n%s", expected, output)
 		}
 	}
 }
@@ -85,11 +90,7 @@ func TestRunDiagnoseReportsBothFindings(t *testing.T) {
 func TestRunDiagnoseMissingFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "missing.parquet")
 
-	var output bytes.Buffer
-	command := diagnoseCmd
-	command.SetOut(&output)
-
-	err := runDiagnose(command, []string{path})
+	_, err := runDiagnoseForTest(t, path)
 	if err == nil {
 		t.Fatal("expected an error for a missing file")
 	}
