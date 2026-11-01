@@ -237,3 +237,99 @@ func TestReadMetadataZeroNullCount(t *testing.T) {
 		}
 	}
 }
+
+func TestReadMetadataEmptyParquetDataset(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "empty.parquet")
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writer := parquetgo.NewGenericWriter[testRecord](file)
+	if err := writer.Close(); err != nil {
+		_ = file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	metadata, err := ReadMetadata(path)
+	if err != nil {
+		t.Fatalf("ReadMetadata failed for empty dataset: %v", err)
+	}
+	if metadata.NumRows != 0 {
+		t.Errorf("NumRows = %d, want 0", metadata.NumRows)
+	}
+	if metadata.CompressionRatio != 0 {
+		t.Errorf("CompressionRatio = %f, want 0", metadata.CompressionRatio)
+	}
+	for _, column := range metadata.Columns {
+		if column.NullCountKnown {
+			t.Errorf("column %q in an empty dataset should not claim a known null count", column.Name)
+		}
+	}
+}
+
+func TestReadMetadataNullCountsAcrossRowGroups(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "multi-row-group.parquet")
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writer := parquetgo.NewGenericWriter[nullableTestRecord](
+		file,
+		parquetgo.MaxRowsPerRowGroup(1),
+	)
+	email := "alice@example.com"
+	_, err = writer.Write([]nullableTestRecord{
+		{ID: 1, Email: &email},
+		{ID: 2, Email: nil},
+		{ID: 3, Email: nil},
+	})
+	if err != nil {
+		_ = writer.Close()
+		_ = file.Close()
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		_ = file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	metadata, err := ReadMetadata(path)
+	if err != nil {
+		t.Fatalf("ReadMetadata failed: %v", err)
+	}
+	if metadata.NumRowGroups != 3 {
+		t.Fatalf("NumRowGroups = %d, want 3", metadata.NumRowGroups)
+	}
+
+	columns := make(map[string]summary.ColumnSummary)
+	for _, column := range metadata.Columns {
+		columns[column.Name] = column
+	}
+
+	emailColumn, ok := columns["email"]
+	if !ok {
+		t.Fatal("email column not found")
+	}
+	if emailColumn.NullCount != 2 {
+		t.Errorf("email NullCount = %d, want 2", emailColumn.NullCount)
+	}
+	if emailColumn.NullCountKnown {
+		t.Error("email null count should remain unknown when zero-null statistics presence cannot be verified")
+	}
+
+	idColumn, ok := columns["id"]
+	if !ok {
+		t.Fatal("id column not found")
+	}
+	if idColumn.NullCountKnown {
+		t.Error("id null count should remain unknown when row groups report zero nulls")
+	}
+}
