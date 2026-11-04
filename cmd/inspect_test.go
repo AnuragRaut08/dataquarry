@@ -101,3 +101,20 @@ func TestInspectRequiresExactlyOneArgument(t *testing.T) {
 		t.Fatal("expected an error when multiple files are provided")
 	}
 }
+
+func TestRunInspectInvalidFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "invalid.parquet")
+
+	if err := os.WriteFile(path, []byte("not a valid parquet file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	err := runInspect(inspectCmd, []string{path})
+	if err == nil {
+		t.Fatal("expected an error for an invalid Parquet file")
+	}
+
+	if !strings.Contains(err.Error(), "inspect") {
+		t.Fatalf("expected inspect context in error, got: %v", err)
+	}
+}

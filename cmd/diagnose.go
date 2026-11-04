@@ -12,12 +12,17 @@ import (
 var diagnoseCmd = &cobra.Command{
 	Use:   "diagnose <file.parquet>",
 	Short: "Analyze a dataset for storage issues",
-	Long: `Analyze a Parquet dataset and report structured storage findings.
+	Long: `Analyze a dataset and report structured storage findings.
 
-DataQuarry identifies inefficient storage patterns and provides
-evidence-backed recommendations without modifying the dataset.`,
+DataQuarry's diagnostic engine identifies inefficient storage
+patterns and provides evidence-backed recommendations without
+modifying the underlying dataset.`,
 	Args: cobra.ExactArgs(1),
 	RunE: runDiagnose,
+}
+
+func init() {
+	rootCmd.AddCommand(diagnoseCmd)
 }
 
 func runDiagnose(cmd *cobra.Command, args []string) error {
@@ -37,31 +42,25 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 		metadata.NumRows,
 		metadata.Columns,
 	)
-
 	findings = append(
 		findings,
 		diagnose.SmallRowGroupFindings(dataset)...,
 	)
 
 	out := cmd.OutOrStdout()
-
 	if len(findings) == 0 {
 		_, err := fmt.Fprintln(out, "No diagnostic findings.")
 		return err
 	}
 
-	if _, err := fmt.Fprintf(out, "Diagnostic Results — %s\n", args[0]); err != nil {
-		return err
-	}
-
-	if _, err := fmt.Fprintln(out, "--------------------------------------------"); err != nil {
+	if _, err := fmt.Fprintln(out, "Diagnostic Results"); err != nil {
 		return err
 	}
 
 	for i, finding := range findings {
 		if _, err := fmt.Fprintf(
 			out,
-			"Finding %d: %s\nSeverity: %s\nEvidence: %s\nRecommendation: %s\n",
+			"Finding %d: %s\\nSeverity: %s\\nEvidence: %s\\nRecommendation: %s\\n",
 			i+1,
 			finding.Title,
 			finding.Severity,
@@ -70,7 +69,6 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 		); err != nil {
 			return err
 		}
-
 		if i < len(findings)-1 {
 			if _, err := fmt.Fprintln(out); err != nil {
 				return err
@@ -79,8 +77,4 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func init() {
-	rootCmd.AddCommand(diagnoseCmd)
 }
