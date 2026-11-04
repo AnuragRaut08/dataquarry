@@ -97,3 +97,23 @@ func TestHighNullRatioFindings(t *testing.T) {
 		})
 	}
 }
+
+func TestHighNullRatioFindingsWithIncompleteStatistics(t *testing.T) {
+	columns := []summary.ColumnSummary{
+		{
+			Name:           "email",
+			NullCount:      90,
+			NullCountKnown: false,
+		},
+		{
+			Name:           "status",
+			NullCount:      0,
+			NullCountKnown: false,
+		},
+	}
+
+	findings := HighNullRatioFindings(100, columns)
+	if len(findings) != 0 {
+		t.Fatalf("got %d findings for unknown null counts, want 0", len(findings))
+	}
+}
