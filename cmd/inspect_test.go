@@ -117,4 +117,24 @@ func TestRunInspectInvalidFile(t *testing.T) {
 	if !strings.Contains(err.Error(), "inspect") {
 		t.Fatalf("expected inspect context in error, got: %v", err)
 	}
+
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("expected error to contain directory path %q, got: %v", path, err)
+	}
+}
+
+func TestRunInspectDirectoryInput(t *testing.T) {
+	path := t.TempDir()
+
+	err := runInspect(inspectCmd, []string{path})
+	if err == nil {
+		t.Fatal("expected an error when input is a directory")
+	}
+
+	if !strings.Contains(err.Error(), "inspect") {
+		t.Fatalf("expected inspect context in error, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("expected error to contain directory path %q, got: %v", path, err)
+	}
 }

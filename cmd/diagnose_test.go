@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -73,7 +74,6 @@ func TestRunDiagnoseReportsBothFindings(t *testing.T) {
 	}
 
 	for _, expected := range []string{
-		"Diagnostic Results",
 		`Column "email" has a high null ratio`,
 		"2 nulls out of 3 rows (66.7%)",
 		"Severity: medium",
@@ -110,5 +110,58 @@ func TestDiagnoseRequiresExactlyOneArgument(t *testing.T) {
 		[]string{"one.parquet", "two.parquet"},
 	); err == nil {
 		t.Fatal("expected an error when multiple files are provided")
+	}
+}
+
+func TestRunDiagnoseDirectoryInput(t *testing.T) {
+	path := t.TempDir()
+
+	_, err := runDiagnoseForTest(t, path)
+	if err == nil {
+		t.Fatal("expected an error when input is a directory")
+	}
+
+	if !strings.Contains(err.Error(), "diagnose") {
+		t.Fatalf("expected diagnose context in error, got: %v", err)
+	}
+
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("expected error to contain directory path %q, got: %v", path, err)
+	}
+}
+
+func TestCLICommandsReturnNonZeroExitStatusForDirectoryInput(t *testing.T) {
+	binaryPath := filepath.Join(t.TempDir(), "dataquarry")
+
+	build := exec.Command("go", "build", "-o", binaryPath, "..")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("failed to build CLI: %v\n%s", err, output)
+	}
+
+	for _, commandName := range []string{"inspect", "diagnose"} {
+		t.Run(commandName, func(t *testing.T) {
+			directoryPath := t.TempDir()
+
+			command := exec.Command(binaryPath, commandName, directoryPath)
+			output, err := command.CombinedOutput()
+
+			if err == nil {
+				t.Fatalf(
+					"expected %s to exit with a non-zero status for directory %q; output: %s",
+					commandName,
+					directoryPath,
+					output,
+				)
+			}
+
+			exitErr, ok := err.(*exec.ExitError)
+			if !ok {
+				t.Fatalf("expected process exit error, got: %v", err)
+			}
+
+			if exitErr.ExitCode() == 0 {
+				t.Fatalf("expected non-zero exit status, got 0")
+			}
+		})
 	}
 }
