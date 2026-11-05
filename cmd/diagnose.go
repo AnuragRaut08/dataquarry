@@ -53,10 +53,6 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if _, err := fmt.Fprintln(out, "Diagnostic Results"); err != nil {
-		return err
-	}
-
 	for i, finding := range findings {
 		if _, err := fmt.Fprintf(
 			out,
