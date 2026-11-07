@@ -62,12 +62,25 @@ func runInspect(cmd *cobra.Command, args []string) error {
 	if _, err := fmt.Fprintln(out, "Schema"); err != nil {
 		return err
 	}
-	if len(metadata.Schema) == 0 {
+	if len(metadata.Columns) == 0 {
 		_, err := fmt.Fprintln(out, "• No columns")
 		return err
 	}
-	for _, field := range metadata.Schema {
-		if _, err := fmt.Fprintf(out, "• %s\n", field); err != nil {
+	for _, column := range metadata.Columns {
+		typeLabel := column.Type
+		if column.LogicalType != "" {
+			if typeLabel != "" {
+				typeLabel += " (" + column.LogicalType + ")"
+			} else {
+				typeLabel = column.LogicalType
+			}
+		}
+
+		if typeLabel == "" {
+			if _, err := fmt.Fprintf(out, "• %s\n", column.Name); err != nil {
+				return err
+			}
+		} else if _, err := fmt.Fprintf(out, "• %s  %s\n", column.Name, typeLabel); err != nil {
 			return err
 		}
 	}
