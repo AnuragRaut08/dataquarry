@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -9,9 +10,11 @@ import (
 const version = "0.1.0"
 
 var rootCmd = &cobra.Command{
-	Use:     "dataquarry",
-	Short:   "Inspect, diagnose, and optimize data files",
-	Version: version,
+	Use:           "dataquarry",
+	Short:         "Inspect, diagnose, and optimize data files",
+	Version:       version,
+	SilenceUsage:  true,
+	SilenceErrors: true,
 	Long: `DataQuarry is a CLI for data engineers that helps inspect,
 diagnose, benchmark, and optimize data files using evidence
 instead of guesswork.
@@ -23,6 +26,7 @@ performance recommendations.`,
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
+		_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "Error: %v\n", err)
 		os.Exit(1)
 	}
 }

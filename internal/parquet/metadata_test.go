@@ -374,3 +374,21 @@ func TestReadMetadataInspectionFixture(t *testing.T) {
 		}
 	}
 }
+
+func TestReadMetadataUnsupportedFormat(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "input.csv")
+	if err := os.WriteFile(path, []byte("id,name\\n1,alice\\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := ReadMetadata(path)
+	if err == nil {
+		t.Fatal("expected an unsupported format error")
+	}
+	if !strings.Contains(err.Error(), "unsupported input format") {
+		t.Fatalf("expected unsupported format error, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("expected error to include input path, got: %v", err)
+	}
+}

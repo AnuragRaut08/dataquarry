@@ -3,6 +3,7 @@ package parquet
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -35,6 +36,16 @@ func ReadMetadata(path string) (*Metadata, error) {
 	if err != nil {
 		return nil, fmt.Errorf("stat parquet file %q: %w", path, err)
 	}
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".csv", ".tsv", ".json", ".jsonl", ".ndjson", ".avro", ".orc":
+		return nil, fmt.Errorf(
+			"unsupported input format %q for %q: only Parquet files are supported",
+			ext,
+			path,
+		)
+	}
+
 	if info.Size() < 8 {
 		return nil, fmt.Errorf("invalid parquet file %q: file is too small", path)
 	}

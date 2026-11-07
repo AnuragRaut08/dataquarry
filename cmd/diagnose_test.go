@@ -112,3 +112,21 @@ func TestDiagnoseRequiresExactlyOneArgument(t *testing.T) {
 		t.Fatal("expected an error when multiple files are provided")
 	}
 }
+
+func TestRunDiagnoseDoesNotPrintResultsOnInvalidFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "invalid.parquet")
+	if err := os.WriteFile(path, []byte("not a valid parquet file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	output, err := runDiagnoseForTest(t, path)
+	if err == nil {
+		t.Fatal("expected an error for an invalid Parquet file")
+	}
+	if output != "" {
+		t.Fatalf("expected no partial output after failure, got: %s", output)
+	}
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("expected error to contain input path, got: %v", err)
+	}
+}
