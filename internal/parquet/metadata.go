@@ -23,6 +23,33 @@ type Metadata struct {
 	Columns           []summary.ColumnSummary
 }
 
+type columnTypeInfo struct {
+	PhysicalType string
+	LogicalType  string
+}
+
+// collectColumnTypes walks the Parquet schema and records types for leaf columns.
+func collectColumnTypes(node parquetgo.Node, path []string, result map[string]columnTypeInfo) {
+	if node.Leaf() {
+		typ := node.Type()
+		info := columnTypeInfo{
+			PhysicalType: typ.Kind().String(),
+		}
+
+		if logical := typ.LogicalType(); logical != nil && logical.Value != nil {
+			info.LogicalType = logical.Value.String()
+		}
+
+		result[strings.Join(path, ".")] = info
+		return
+	}
+
+	for _, field := range node.Fields() {
+		childPath := append(append([]string(nil), path...), field.Name())
+		collectColumnTypes(field, childPath, result)
+	}
+}
+
 // ReadMetadata reads structural metadata from a Parquet file footer.
 func ReadMetadata(path string) (*Metadata, error) {
 	file, err := os.Open(path)
@@ -45,18 +72,28 @@ func ReadMetadata(path string) (*Metadata, error) {
 	}
 
 	footer := pf.Metadata()
-	schemaColumns := pf.Schema().Columns()
+	parquetSchema := pf.Schema()
+	schemaColumns := parquetSchema.Columns()
 	schema := make([]string, 0, len(schemaColumns))
 	columnSummaries := make([]summary.ColumnSummary, 0, len(schemaColumns))
 	columnIndexes := make(map[string]int, len(schemaColumns))
 	rowGroupsWithColumn := make([]int, len(schemaColumns))
 	rowGroupsWithNullStats := make([]int, len(schemaColumns))
 
+	columnTypes := make(map[string]columnTypeInfo, len(schemaColumns))
+	collectColumnTypes(parquetSchema, nil, columnTypes)
+
 	for _, pathParts := range schemaColumns {
 		name := strings.Join(pathParts, ".")
 		columnIndexes[name] = len(columnSummaries)
 		schema = append(schema, name)
-		columnSummaries = append(columnSummaries, summary.ColumnSummary{Name: name})
+
+		typeInfo := columnTypes[name]
+		columnSummaries = append(columnSummaries, summary.ColumnSummary{
+			Name:        name,
+			Type:        typeInfo.PhysicalType,
+			LogicalType: typeInfo.LogicalType,
+		})
 	}
 
 	codecSet := make(map[string]struct{})

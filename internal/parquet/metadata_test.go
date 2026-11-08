@@ -169,8 +169,15 @@ func TestReadMetadataNullCountStatistics(t *testing.T) {
 		t.Fatalf("ReadMetadata failed: %v", err)
 	}
 
+	if len(metadata.Columns) != 2 {
+		t.Fatalf("got %d columns, want 2", len(metadata.Columns))
+	}
+
 	columns := make(map[string]summary.ColumnSummary)
 	for _, column := range metadata.Columns {
+		if _, exists := columns[column.Name]; exists {
+			t.Fatalf("duplicate column summary: %q", column.Name)
+		}
 		columns[column.Name] = column
 	}
 
@@ -372,5 +379,52 @@ func TestReadMetadataInspectionFixture(t *testing.T) {
 			t.Errorf("CompressionCodecs[%d] = %q, want %q",
 				i, metadata.CompressionCodecs[i], expected)
 		}
+	}
+}
+
+func TestReadMetadataPhysicalAndLogicalTypes(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "types.parquet")
+
+	type record struct {
+		ID   int64  `parquet:"id"`
+		Name string `parquet:"name"`
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writer := parquetgo.NewGenericWriter[record](file)
+	if _, err := writer.Write([]record{
+		{ID: 1, Name: "Alice"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	metadata, err := ReadMetadata(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	columns := make(map[string]summary.ColumnSummary)
+	for _, column := range metadata.Columns {
+		columns[column.Name] = column
+	}
+
+	if got := columns["id"].Type; got != "INT64" {
+		t.Errorf("id physical type = %q, want INT64", got)
+	}
+	if got := columns["name"].Type; got != "BYTE_ARRAY" {
+		t.Errorf("name physical type = %q, want BYTE_ARRAY", got)
+	}
+	if got := columns["name"].LogicalType; got != "STRING" {
+		t.Errorf("name logical type = %q, want STRING", got)
 	}
 }
