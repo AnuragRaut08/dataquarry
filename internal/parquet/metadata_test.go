@@ -169,8 +169,15 @@ func TestReadMetadataNullCountStatistics(t *testing.T) {
 		t.Fatalf("ReadMetadata failed: %v", err)
 	}
 
+	if len(metadata.Columns) != 2 {
+		t.Fatalf("got %d columns, want 2", len(metadata.Columns))
+	}
+
 	columns := make(map[string]summary.ColumnSummary)
 	for _, column := range metadata.Columns {
+		if _, exists := columns[column.Name]; exists {
+			t.Fatalf("duplicate column summary: %q", column.Name)
+		}
 		columns[column.Name] = column
 	}
 
