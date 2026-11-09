@@ -169,8 +169,15 @@ func TestReadMetadataNullCountStatistics(t *testing.T) {
 		t.Fatalf("ReadMetadata failed: %v", err)
 	}
 
+	if len(metadata.Columns) != 2 {
+		t.Fatalf("got %d columns, want 2", len(metadata.Columns))
+	}
+
 	columns := make(map[string]summary.ColumnSummary)
 	for _, column := range metadata.Columns {
+		if _, exists := columns[column.Name]; exists {
+			t.Fatalf("duplicate column summary: %q", column.Name)
+		}
 		columns[column.Name] = column
 	}
 
@@ -377,7 +384,7 @@ func TestReadMetadataInspectionFixture(t *testing.T) {
 
 func TestReadMetadataUnsupportedFormat(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "input.csv")
-	if err := os.WriteFile(path, []byte("id,name\\n1,alice\\n"), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte("id,name\n1,alice\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -385,10 +392,66 @@ func TestReadMetadataUnsupportedFormat(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an unsupported format error")
 	}
+
 	if !strings.Contains(err.Error(), "unsupported input format") {
 		t.Fatalf("expected unsupported format error, got: %v", err)
 	}
+
 	if !strings.Contains(err.Error(), path) {
 		t.Fatalf("expected error to include input path, got: %v", err)
+	}
+}
+
+func TestReadMetadataPhysicalAndLogicalTypes(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "types.parquet")
+
+	type record struct {
+		ID   int64  `parquet:"id"`
+		Name string `parquet:"name"`
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writer := parquetgo.NewGenericWriter[record](file)
+	if _, err := writer.Write([]record{
+		{ID: 1, Name: "Alice"},
+	}); err != nil {
+		_ = writer.Close()
+		_ = file.Close()
+		t.Fatal(err)
+	}
+
+	if err := writer.Close(); err != nil {
+		_ = file.Close()
+		t.Fatal(err)
+	}
+
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	metadata, err := ReadMetadata(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	columns := make(map[string]summary.ColumnSummary)
+	for _, column := range metadata.Columns {
+		columns[column.Name] = column
+	}
+
+	if got := columns["id"].Type; got != "INT64" {
+		t.Errorf("id physical type = %q, want INT64", got)
+	}
+
+	if got := columns["name"].Type; got != "BYTE_ARRAY" {
+		t.Errorf("name physical type = %q, want BYTE_ARRAY", got)
+	}
+
+	if got := columns["name"].LogicalType; got != "STRING" {
+		t.Errorf("name logical type = %q, want STRING", got)
 	}
 }

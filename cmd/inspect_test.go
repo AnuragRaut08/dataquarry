@@ -71,8 +71,8 @@ func TestRunInspect(t *testing.T) {
 		"Compression Ratio:",
 		"Compression Codecs",
 		"Schema",
-		"id",
-		"name",
+		"id  INT64",
+		"name  BYTE_ARRAY (STRING)",
 	} {
 		if !strings.Contains(got, expected) {
 			t.Errorf("output does not contain %q:\n%s", expected, got)

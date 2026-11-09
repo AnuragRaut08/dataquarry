@@ -1,10 +1,10 @@
-
 package summary
 
 // ColumnSummary contains derived measurements for a dataset column.
 type ColumnSummary struct {
 	Name             string
 	Type             string
+	LogicalType      string
 	CompressedSize   int64
 	UncompressedSize int64
 	NullCount        int64
