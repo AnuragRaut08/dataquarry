@@ -118,3 +118,28 @@ func TestRunInspectInvalidFile(t *testing.T) {
 		t.Fatalf("expected inspect context in error, got: %v", err)
 	}
 }
+
+func TestRunInspectDoesNotPrintSummaryOnInvalidFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "invalid.parquet")
+	if err := os.WriteFile(path, []byte("not a valid parquet file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var output bytes.Buffer
+	command := inspectCmd
+	command.SetOut(&output)
+	t.Cleanup(func() {
+		command.SetOut(nil)
+	})
+
+	err := runInspect(command, []string{path})
+	if err == nil {
+		t.Fatal("expected an error for an invalid Parquet file")
+	}
+	if output.Len() != 0 {
+		t.Fatalf("expected no partial output after failure, got: %s", output.String())
+	}
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("expected error to contain input path, got: %v", err)
+	}
+}

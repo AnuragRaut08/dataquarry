@@ -13,7 +13,7 @@ var inspectCmd = &cobra.Command{
 	Short: "Inspect Parquet metadata",
 	Long: `Inspect a Parquet file and display its structural metadata,
 including row counts, schema, row groups, and compression statistics.`,
-	Args: cobra.ExactArgs(1),
+	Args: requireExactlyOneInput,
 	RunE: runInspect,
 }
 

@@ -17,7 +17,7 @@ var diagnoseCmd = &cobra.Command{
 DataQuarry's diagnostic engine identifies inefficient storage
 patterns and provides evidence-backed recommendations without
 modifying the underlying dataset.`,
-	Args: cobra.ExactArgs(1),
+	Args: requireExactlyOneInput,
 	RunE: runDiagnose,
 }
 

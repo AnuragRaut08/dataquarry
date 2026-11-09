@@ -382,6 +382,26 @@ func TestReadMetadataInspectionFixture(t *testing.T) {
 	}
 }
 
+func TestReadMetadataUnsupportedFormat(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "input.csv")
+	if err := os.WriteFile(path, []byte("id,name\n1,alice\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := ReadMetadata(path)
+	if err == nil {
+		t.Fatal("expected an unsupported format error")
+	}
+
+	if !strings.Contains(err.Error(), "unsupported input format") {
+		t.Fatalf("expected unsupported format error, got: %v", err)
+	}
+
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("expected error to include input path, got: %v", err)
+	}
+}
+
 func TestReadMetadataPhysicalAndLogicalTypes(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "types.parquet")
 
@@ -399,11 +419,16 @@ func TestReadMetadataPhysicalAndLogicalTypes(t *testing.T) {
 	if _, err := writer.Write([]record{
 		{ID: 1, Name: "Alice"},
 	}); err != nil {
+		_ = writer.Close()
+		_ = file.Close()
 		t.Fatal(err)
 	}
+
 	if err := writer.Close(); err != nil {
+		_ = file.Close()
 		t.Fatal(err)
 	}
+
 	if err := file.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -421,9 +446,11 @@ func TestReadMetadataPhysicalAndLogicalTypes(t *testing.T) {
 	if got := columns["id"].Type; got != "INT64" {
 		t.Errorf("id physical type = %q, want INT64", got)
 	}
+
 	if got := columns["name"].Type; got != "BYTE_ARRAY" {
 		t.Errorf("name physical type = %q, want BYTE_ARRAY", got)
 	}
+
 	if got := columns["name"].LogicalType; got != "STRING" {
 		t.Errorf("name logical type = %q, want STRING", got)
 	}
