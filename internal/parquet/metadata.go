@@ -89,6 +89,7 @@ func ReadMetadata(path string) (*Metadata, error) {
 	columnSummaries := make([]summary.ColumnSummary, 0, len(schemaColumns))
 	columnIndexes := make(map[string]int, len(schemaColumns))
 	rowGroupsWithColumn := make([]int, len(schemaColumns))
+	columnCodecSets := make([]map[string]struct{}, len(schemaColumns))
 	rowGroupsWithNullStats := make([]int, len(schemaColumns))
 
 	columnTypes := make(map[string]columnTypeInfo, len(schemaColumns))
@@ -124,6 +125,13 @@ func ReadMetadata(path string) (*Metadata, error) {
 			}
 
 			if index, ok := columnIndexes[name]; ok {
+				if codec != "" {
+					if columnCodecSets[index] == nil {
+						columnCodecSets[index] = make(map[string]struct{})
+					}
+					columnCodecSets[index][codec] = struct{}{}
+				}
+
 				columnSummaries[index].CompressedSize += columnMetadata.TotalCompressedSize
 				columnSummaries[index].UncompressedSize += columnMetadata.TotalUncompressedSize
 				columnSummaries[index].Type = columnMetadata.Type.String()
@@ -143,6 +151,14 @@ func ReadMetadata(path string) (*Metadata, error) {
 		columnSummaries[i].NullCountKnown =
 			rowGroupsWithColumn[i] > 0 &&
 				rowGroupsWithColumn[i] == rowGroupsWithNullStats[i]
+
+		columnCodecs := make([]string, 0, len(columnCodecSets[i]))
+		for codec := range columnCodecSets[i] {
+			columnCodecs = append(columnCodecs, codec)
+		}
+		sort.Strings(columnCodecs)
+
+		columnSummaries[i].CompressionCodecs = columnCodecs
 	}
 
 	codecs := make([]string, 0, len(codecSet))

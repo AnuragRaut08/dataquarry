@@ -2,14 +2,15 @@ package summary
 
 // ColumnSummary contains derived measurements for a dataset column.
 type ColumnSummary struct {
-	Name             string
-	Type             string
-	LogicalType      string
-	CompressedSize   int64
-	UncompressedSize int64
-	NullCount        int64
-	NullCountKnown   bool
-	CompressionCodec string
+	Name              string
+	Type              string
+	LogicalType       string
+	CompressedSize    int64
+	UncompressedSize  int64
+	NullCount         int64
+	NullCountKnown    bool
+	CompressionCodec  string
+	CompressionCodecs []string
 }
 
 // Summary is a reusable, presentation-independent dataset summary.
@@ -40,10 +41,21 @@ func NewSummary(
 		compressed += c.CompressedSize
 		uncompressed += c.UncompressedSize
 
-		if c.CompressionCodec != "" {
-			if _, ok := codecSet[c.CompressionCodec]; !ok {
-				codecSet[c.CompressionCodec] = struct{}{}
-				codecs = append(codecs, c.CompressionCodec)
+		columnCodecs := c.CompressionCodecs
+
+		// Preserve compatibility with callers that only provide CompressionCodec.
+		if len(columnCodecs) == 0 && c.CompressionCodec != "" {
+			columnCodecs = []string{c.CompressionCodec}
+		}
+
+		for _, codec := range columnCodecs {
+			if codec == "" {
+				continue
+			}
+
+			if _, ok := codecSet[codec]; !ok {
+				codecSet[codec] = struct{}{}
+				codecs = append(codecs, codec)
 			}
 		}
 	}

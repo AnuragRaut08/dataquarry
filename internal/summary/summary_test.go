@@ -44,3 +44,39 @@ func TestNewSummary(t *testing.T) {
 		t.Fatal("invalid compression ratio")
 	}
 }
+
+func TestNewSummaryCollectsMultipleCompressionCodecs(t *testing.T) {
+	cols := []ColumnSummary{
+		{
+			Name:              "salary",
+			CompressionCodecs: []string{"SNAPPY", "ZSTD"},
+		},
+		{
+			Name:              "department",
+			CompressionCodecs: []string{"GZIP", "SNAPPY"},
+		},
+	}
+
+	s := NewSummary("parquet", 100, 2, cols)
+
+	want := []string{"SNAPPY", "ZSTD", "GZIP"}
+
+	if len(s.CompressionCodecs) != len(want) {
+		t.Fatalf(
+			"got %d codecs, want %d",
+			len(s.CompressionCodecs),
+			len(want),
+		)
+	}
+
+	for i, codec := range want {
+		if s.CompressionCodecs[i] != codec {
+			t.Errorf(
+				"codec at index %d = %q, want %q",
+				i,
+				s.CompressionCodecs[i],
+				codec,
+			)
+		}
+	}
+}
