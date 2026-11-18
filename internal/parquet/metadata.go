@@ -9,6 +9,7 @@ import (
 
 	"github.com/AnuragRaut08/dataquarry/internal/summary"
 	parquetgo "github.com/parquet-go/parquet-go"
+	"github.com/parquet-go/parquet-go/format"
 )
 
 // Metadata contains structural measurements extracted from a Parquet footer.
@@ -27,6 +28,31 @@ type Metadata struct {
 type columnTypeInfo struct {
 	PhysicalType string
 	LogicalType  string
+}
+
+// compressionCodecName returns a stable display name for known codecs and
+// preserves unknown codec values without relying on generated String methods.
+func compressionCodecName(codec format.CompressionCodec) string {
+	switch codec {
+	case format.Uncompressed:
+		return "UNCOMPRESSED"
+	case format.Snappy:
+		return "SNAPPY"
+	case format.Gzip:
+		return "GZIP"
+	case format.LZO:
+		return "LZO"
+	case format.Brotli:
+		return "BROTLI"
+	case format.Lz4:
+		return "LZ4"
+	case format.Zstd:
+		return "ZSTD"
+	case format.Lz4Raw:
+		return "LZ4_RAW"
+	default:
+		return fmt.Sprintf("UNKNOWN(%d)", int32(codec))
+	}
 }
 
 // collectColumnTypes walks the Parquet schema and records types for leaf columns.
@@ -114,7 +140,7 @@ func ReadMetadata(path string) (*Metadata, error) {
 		for _, column := range rowGroup.Columns {
 			columnMetadata := column.MetaData
 			name := strings.Join(columnMetadata.PathInSchema, ".")
-			codec := columnMetadata.Codec.String()
+			codec := compressionCodecName(columnMetadata.Codec)
 
 			compressedSize += columnMetadata.TotalCompressedSize
 			uncompressedSize += columnMetadata.TotalUncompressedSize
