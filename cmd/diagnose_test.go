@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -128,5 +129,82 @@ func TestRunDiagnoseDoesNotPrintResultsOnInvalidFile(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), path) {
 		t.Fatalf("expected error to contain input path, got: %v", err)
+	}
+}
+
+func TestRunDiagnoseDirectoryInput(t *testing.T) {
+	path := t.TempDir()
+
+	_, err := runDiagnoseForTest(t, path)
+	if err == nil {
+		t.Fatal("expected an error when input is a directory")
+	}
+
+	if !strings.Contains(err.Error(), "diagnose") {
+		t.Fatalf("expected diagnose context in error, got: %v", err)
+	}
+
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("expected error to contain directory path %q, got: %v", path, err)
+	}
+}
+
+func TestCLICommandsReturnNonZeroExitStatusForInvalidInputs(t *testing.T) {
+	binaryPath := filepath.Join(t.TempDir(), "dataquarry")
+
+	build := exec.Command("go", "build", "-o", binaryPath, "..")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("failed to build CLI: %v\n%s", err, output)
+	}
+
+	for _, commandName := range []string{"inspect", "diagnose"} {
+		t.Run(commandName, func(t *testing.T) {
+			t.Run("directory", func(t *testing.T) {
+				directoryPath := t.TempDir()
+				assertCLICommandFails(t, binaryPath, commandName, directoryPath)
+			})
+
+			t.Run("missing file", func(t *testing.T) {
+				missingPath := filepath.Join(t.TempDir(), "missing.parquet")
+				assertCLICommandFails(t, binaryPath, commandName, missingPath)
+			})
+
+			t.Run("corrupted file", func(t *testing.T) {
+				corruptedPath := filepath.Join(t.TempDir(), "corrupted.parquet")
+				if err := os.WriteFile(corruptedPath, []byte("not a valid parquet file"), 0600); err != nil {
+					t.Fatalf("failed to create corrupted file: %v", err)
+				}
+				assertCLICommandFails(t, binaryPath, commandName, corruptedPath)
+			})
+		})
+	}
+}
+
+func assertCLICommandFails(t *testing.T, binaryPath, commandName, inputPath string) {
+	t.Helper()
+
+	command := exec.Command(binaryPath, commandName, inputPath)
+	output, err := command.CombinedOutput()
+
+	if err == nil {
+		t.Fatalf(
+			"expected %s to exit with a non-zero status for %q; output: %s",
+			commandName,
+			inputPath,
+			output,
+		)
+	}
+
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		t.Fatalf("expected process exit error, got: %v", err)
+	}
+
+	if exitErr.ExitCode() == 0 {
+		t.Fatal("expected non-zero exit status, got 0")
+	}
+
+	if !strings.Contains(string(output), inputPath) {
+		t.Errorf("expected output to contain input path %q, got: %s", inputPath, output)
 	}
 }
