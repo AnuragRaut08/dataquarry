@@ -74,6 +74,7 @@ func TestRunDiagnoseReportsBothFindings(t *testing.T) {
 	}
 
 	for _, expected := range []string{
+		"Diagnostic Results",
 		`Column "email" has a high null ratio`,
 		"2 nulls out of 3 rows (66.7%)",
 		"Severity: medium",
